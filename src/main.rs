@@ -10,11 +10,11 @@ struct Command {
 }
 
 impl Command {
-    fn from_line(line: &String) -> Result<Self, String> {
+    fn from_line(line: &String) -> std::io::Result<Self> {
         let split: Vec<&str> = line.split(' ').collect();
 
         if split.len() < 2 {
-            return Err("Less than two commands")
+            return Err(std::io::Error::from(std::io::ErrorKind::InvalidData))
         }
 
         let cmd = Command{command : String::new(), key : String::new(), value : String::new()};
@@ -26,10 +26,7 @@ fn handle_client(stream: TcpStream) -> std::io::Result<()> {
     let reader = BufReader::new(stream);
 
     for line in reader.lines() {
-        let command = match Command::from_line(&line?) {
-            Ok(cmd) => cmd,
-            Error(err) => return ()
-        }
+        let command = Command::from_line(&line?)?;
 
         println!("{} {} {}", command.command, command.key, command.value)
     } 
@@ -60,7 +57,7 @@ fn main() {
     };
 
     for stream in listener.incoming() {
-        let child = thread::spawn(move || {
+        let _child = thread::spawn(move || {
             handle_new_client(stream);
         });
     }
